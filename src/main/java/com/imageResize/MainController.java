@@ -1,6 +1,7 @@
 package com.imageResize;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -23,6 +24,7 @@ public class MainController {
 
 	@GetMapping(value = "/runResize")
 	@ResponseBody
+	@Async
 	public String runResize() throws Exception {
 		imageResize.resizeTest();
 		return "Mannual iamge resize run!";

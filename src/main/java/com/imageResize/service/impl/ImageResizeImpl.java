@@ -1,6 +1,7 @@
 package com.imageResize.service.impl;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.ImagingOpException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,8 +31,11 @@ import org.apache.http.util.EntityUtils;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.imgscalr.Scalr.Mode;
+import org.junit.runners.AllTests;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -44,29 +48,36 @@ import com.imageResize.dto.NodeDTO;
 import com.imageResize.dto.RootNodeDTO;
 import com.imageResize.dto.TreeDTO;
 import com.imageResize.service.AuthorizationService;
+import com.imageResize.service.ExcelConverter;
 import com.imageResize.service.ImageResize;
 
 import lombok.extern.slf4j.Slf4j;
 
-
 @Service
+@EnableAsync
 @Slf4j
-public class ImageResizeImpl implements ImageResize{
+public class ImageResizeImpl implements ImageResize {
+
+	@Autowired
+	private Environment env;
+	
+	@Autowired
+	AuthorizationService authorizationService;
+
+	@Autowired
+	ExcelConverter excelConverter;
 	
 	private ObjectMapper objectMapper = new ObjectMapper();
-	private static final String FILE_PREFIX="REPORT_REDUCED_";
+	private static final String FILE_PREFIX = "REPORT_REDUCED_";
 	public int totalNodes;
 	public int processedNodes;
 	private String serverMainUrl;
-	
-	 @Autowired
-	 private Environment env;
-	
+
 	@Override
 	public int getTotalNodes() {
 		return totalNodes;
 	}
-	
+
 	@PostConstruct
 	private void init() {
 		serverMainUrl = env.getProperty("server.main.path");
@@ -85,123 +96,128 @@ public class ImageResizeImpl implements ImageResize{
 		this.processedNodes = processedNodes;
 	}
 
-	@Autowired
-	AuthorizationService authorizationService;
-
 	@Override
 	public void resizeScheduled() {
 	}
 
 	@Override
+	@Async
 	public void resizeTest() throws Exception {
-	        //List<NodeDTO> level9 = getLevelNineNodes();
-	    	//List<NodeDTO> testNodeList = new ArrayList<NodeDTO>();
-	    	//NodeDTO testN = new NodeDTO();
-	    	//testN.setId(255965);
-	    	//testNodeList.add(testN);
-	        //downloadAttachment(45704, 255965);
-			//totalNodes = level9.size();
-	        //process(level9);
-			log.info(serverMainUrl);
+		log.info(serverMainUrl);
+		List<Integer> level9 = excelConverter.readFile();
+		
+		
+		 //List<Integer> level9 = new ArrayList<Integer>();
+		 //level9.remove(138583 );
+		// process(level9);
+		
+		process(level9);
+
 	}
-	
-    public static void main(String[] args) throws Exception {
 
-        //List<NodeDTO> level9 = getLevelNineNodes();
-    	//List<NodeDTO> testNodeList = new ArrayList<NodeDTO>();
-    	//NodeDTO testN = new NodeDTO();
-    	//testN.setId(255965);
-    	//testNodeList.add(testN);
-        //downloadAttachment(45704, 255965);
+	public static void main(String[] args) throws Exception {
 
-        //process(testNodeList);
-    }
+		// List<NodeDTO> level9 = getLevelNineNodes();
+		// List<NodeDTO> testNodeList = new ArrayList<NodeDTO>();
+		// NodeDTO testN = new NodeDTO();
+		// testN.setId(255965);
+		// testNodeList.add(testN);
+		// downloadAttachment(45704, 255965);
 
-    private List<NodeDTO> getLevelNineNodes() throws Exception {
-        List<TreeDTO> tree = getMainTree();
-        int beginTreeId = 0;
-        int endTreeId = 0;
+		// process(testNodeList);
+	}
 
-        if (tree != null) {
-            beginTreeId = tree.get(0).getId();
-        }
-        if (tree != null && tree.size() > 1) {
-            endTreeId = tree.get(tree.size() - 1).getId();
-        }
+	private List<NodeDTO> getLevelNineNodes() throws Exception {
+		List<TreeDTO> tree = getMainTree();
+		int beginTreeId = 0;
+		int endTreeId = 0;
 
-        RootNodeDTO rootNode = getRootNode();
-        ListOfChildNodes childNodesFirstLevel = getChildNodes(beginTreeId, endTreeId, rootNode.getId());
-        List<NodeDTO> level1 = childNodesFirstLevel.getAllDTO();
-        List<NodeDTO> level2 = new ArrayList<NodeDTO>();
-        List<NodeDTO> level3 = new ArrayList<NodeDTO>();
-        List<NodeDTO> level4 = new ArrayList<NodeDTO>();
-        List<NodeDTO> level5 = new ArrayList<NodeDTO>();
-        List<NodeDTO> level6 = new ArrayList<NodeDTO>();
-        List<NodeDTO> level7 = new ArrayList<NodeDTO>();
-        List<NodeDTO> level8 = new ArrayList<NodeDTO>();
-        List<NodeDTO> level9 = new ArrayList<NodeDTO>();
+		if (tree != null) {
+			beginTreeId = tree.get(0).getId();
+		}
+		if (tree != null && tree.size() > 1) {
+			endTreeId = tree.get(tree.size() - 1).getId();
+		}
 
-        for (NodeDTO n : level1) {
-        	log.info("Level 1 Searching for: " + n.getId());
-            level2.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
-        }
+		RootNodeDTO rootNode = getRootNode();
+		ListOfChildNodes childNodesFirstLevel = getChildNodes(beginTreeId, endTreeId, rootNode.getId());
+		List<NodeDTO> level1 = childNodesFirstLevel.getAllDTO();
+		List<NodeDTO> level2 = new ArrayList<NodeDTO>();
+		List<NodeDTO> level3 = new ArrayList<NodeDTO>();
+		List<NodeDTO> level4 = new ArrayList<NodeDTO>();
+		List<NodeDTO> level5 = new ArrayList<NodeDTO>();
+		List<NodeDTO> level6 = new ArrayList<NodeDTO>();
+		List<NodeDTO> level7 = new ArrayList<NodeDTO>();
+		List<NodeDTO> level8 = new ArrayList<NodeDTO>();
+		List<NodeDTO> level9 = new ArrayList<NodeDTO>();
 
-        for (NodeDTO n : level2) {
-        	log.info("Level 2 Searching for: " + n.getId());
-            level3.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
-        }
-        for (NodeDTO n : level3) {
-        	log.info("Level 3 Searching for: " + n.getId());
-            level4.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
-        }
-        for (NodeDTO n : level4) {
-        	log.info("Level 4 Searching for: " + n.getId());
-            level5.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
-        }
-        for (NodeDTO n : level5) {
-        	log.info("Level 5 Searching for: " + n.getId());
-            level6.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
-        }
-        for (NodeDTO n : level6) {
-        	log.info("Level 6 Searching for: " + n.getId());
-            level7.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
-        }
-        for (NodeDTO n : level7) {
-        	log.info("Level 7 Searching for: " + n.getId());
-            level8.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
-        }
-        for (NodeDTO n : level8) {
-        	log.info("Level 8 Searching for: " + n.getId());
-            level9.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
-        }
-        for (NodeDTO n : level9) {
-        	log.info("Level 9 id: " + n.getId() + " name:" + n.getName());
-        }
-        if(!level9.isEmpty()) {
-            return level9;
-        }else {
-            throw new Exception("Can not reach level nine nodes!");
-        }
+		for (NodeDTO n : level1) {
+			log.info("Level 1 Searching for: " + n.getId());
+			level2.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
+		}
 
-    }
+		for (NodeDTO n : level2) {
+			log.info("Level 2 Searching for: " + n.getId());
+			level3.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
+		}
+		for (NodeDTO n : level3) {
+			log.info("Level 3 Searching for: " + n.getId());
+			level4.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
+		}
+		for (NodeDTO n : level4) {
+			log.info("Level 4 Searching for: " + n.getId());
+			level5.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
+		}
+		for (NodeDTO n : level5) {
+			log.info("Level 5 Searching for: " + n.getId());
+			level6.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
+		}
+		for (NodeDTO n : level6) {
+			log.info("Level 6 Searching for: " + n.getId());
+			level7.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
+		}
+		for (NodeDTO n : level7) {
+			log.info("Level 7 Searching for: " + n.getId());
+			level8.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
+		}
+		for (NodeDTO n : level8) {
+			log.info("Level 8 Searching for: " + n.getId());
+			level9.addAll(getChildNodes(beginTreeId, endTreeId, n.getId()).getAllDTO());
+		}
+		for (NodeDTO n : level9) {
+			log.info("Level 9 id: " + n.getId() + " name:" + n.getName());
+		}
+		if (!level9.isEmpty()) {
+			return level9;
+		} else {
+			throw new Exception("Can not reach level nine nodes!");
+		}
 
-	private void process(List<NodeDTO> levelNine) throws IOException {
+	}
 
-		for (NodeDTO n : levelNine) {
+	private void process(List<Integer> levelNine) throws IOException {
 
-			AttachmentResponseDTO allAttachments = getAttachmentsForNode(n.getId());
+		for (Integer n : levelNine) {
+			log.info("processing node id: " + n);
+			AttachmentResponseDTO allAttachments = getAttachmentsForNode(n);
+			log.info("received attachemnts for node id: " + n + " count="+allAttachments.getTotalElements());
 			for (AttachmentDTO attach : allAttachments.getAttachments()) {
 				processedNodes++;
 				if (isFIleExtensionAccepted(attach)
 						&& !checkIfAttachmentIsProccessed(attach.getAttachmentFileName(), allAttachments)) {
-					// call resize and upload
-					File resized = resizeAttachment(attach, n.getId());
-					uploadAttachment(n.getId(), resized, attach.getComment());
+					log.info("processing RESIZE for node id: " + n + " for attachment name:" +attach.getAttachmentFileName() );
+					File resized = resizeAttachment(attach, n);
+					if(resized != null) {
+						uploadAttachment(n, resized, attach.getComment());
+					}else {
+						log.info("SOMETHING WENT WRONG FOR NODE ID:" + n + " ATTACHMENT ID:" + attach.getAnnexAttachmentId());
+					}
 				}
 			}
 		}
+		log.info("Proccess is DONE!!!");
 	}
-    
+
 	private boolean isFIleExtensionAccepted(AttachmentDTO attach) {
 		String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
 		if (fileExtension.equalsIgnoreCase("jpg") || fileExtension.equalsIgnoreCase("jpeg")
@@ -211,286 +227,312 @@ public class ImageResizeImpl implements ImageResize{
 		return false;
 	}
 
-    private static boolean checkIfAttachmentIsProccessed(String filename, AttachmentResponseDTO allAttachments) {
-
-        for(AttachmentDTO attach : allAttachments.getAttachments()) {
-            if(attach.getAttachmentFileName().contains(FILE_PREFIX)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private File resizeAttachment(AttachmentDTO attach, Integer nodeId) throws IOException {
-        File outputfile = downloadAttachment(attach.getAnnexAttachmentId(), nodeId, attach.getAttachmentFileName());
-        
-        InputStream targetStream = new FileInputStream(outputfile);
+	private static boolean checkIfAttachmentIsProccessed(String filename, AttachmentResponseDTO allAttachments) {
+
+		for (AttachmentDTO attach : allAttachments.getAttachments()) {
+			if (attach.getAttachmentFileName().contains(FILE_PREFIX)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private File resizeAttachment(AttachmentDTO attach, Integer nodeId) throws IOException {
+		File outputfile = downloadAttachment(attach.getAnnexAttachmentId(), nodeId, attach.getAttachmentFileName());
+
+		if (outputfile != null) {
+			InputStream targetStream = new FileInputStream(outputfile);
+
+			BufferedImage image = ImageIO.read(targetStream);
+			int originalHeight = image.getHeight();
+			int originalWidth = image.getWidth();
+			int differnece = 0;
+			int resizedWidth = 0;
+			int resizeHeight = 0;
+
+			if (originalHeight > 500) {
+				if (originalHeight <= originalWidth) {
+					differnece = originalHeight - 500;
+					resizedWidth = originalWidth - differnece;
+					resizeHeight = 500;
+
+				} else {
+					resizeHeight = 500;
+					resizedWidth = originalWidth;
+					// h = 600
+					// w 100
+				}
+			} else {
+				resizeHeight = originalHeight;
+				resizedWidth = originalWidth;
+			}
+
+			log.info("resizeHeight = " + resizeHeight);
+			log.info("resizedWidth = " + resizedWidth);
+
+			String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
+
+			BufferedImage dimg = null;
+			if (originalHeight > 500) {
+				dimg = resize(FILE_PREFIX + outputfile.getName(), image, resizeHeight, resizedWidth);
+
+				File resizedFile = new File(FILE_PREFIX + outputfile.getName());
+				ImageIO.write(dimg, fileExtension, resizedFile);
+				return resizedFile;
+			} else {
+				File resizedFile = new File(FILE_PREFIX + outputfile.getName());
+				ImageIO.write(image, fileExtension, resizedFile);
+				return resizedFile;
+			}
+		}
+		return null;
+	}
+
+	private File downloadAttachment(Integer attachmentId, Integer nodeId, String filename) {
+
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+
+			String url = serverMainUrl + "/attachment/download/" + attachmentId + "/";
+
+			HttpGet getRequest = new HttpGet(url);
+
+			getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
+					.replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+
+			HttpResponse response = httpClient.execute(getRequest);
+
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 200) {
+				throw new RuntimeException("Failed to download attachment with id:"+attachmentId+" for NODE ID:"+nodeId+" with HTTP error code : " + statusCode);
+			}
+
+			File downloadedFile = new File(filename);
+			try {
+				FileUtils.copyInputStreamToFile(response.getEntity().getContent(), downloadedFile);
+			} finally {
+				response.getEntity().getContent().close();
+			}
+			return downloadedFile;
 
-        BufferedImage image = ImageIO.read(targetStream);
-        int originalHeight = image.getHeight();
-        int originalWidth = image.getWidth();
+		} catch (Exception e) {
+			log.error(e.toString());
+		}
+		return null;
 
-        int differnece =originalHeight-500;
-        int resizedWidth = originalWidth-differnece;
+	}
+
+	private void uploadAttachment(Integer nodeId, File outputfile, String comment) {
+		log.info("UPLOADING attachment for node id:" + nodeId + "  file NAME: "+outputfile.getName());
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+			String url = serverMainUrl + "/attachment/node/" + nodeId + "/";
+
+			HttpPost postReq = new HttpPost(url);
+			postReq.addHeader("Authorization", "Bearer " + authorizationService.getToken()
+					.replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
-        String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
-        
-        BufferedImage dimg = null;
-        if(originalHeight > 500) {
-        	dimg = resize(FILE_PREFIX + outputfile.getName(), image, 500, resizedWidth);	
-        	
-        	File resizedFile = new File(FILE_PREFIX + outputfile.getName());
-            ImageIO.write(dimg, fileExtension, resizedFile);
-            return resizedFile;
-        }
-        else {
-        	File resizedFile = new File(FILE_PREFIX + outputfile.getName());
-            ImageIO.write(image, fileExtension, resizedFile);
-        	return resizedFile;
-        }
-
-    }
+			MultipartEntityBuilder entity = MultipartEntityBuilder.create().setMimeSubtype("mixed")
+					.addTextBody("attachment",
+							"{ \"name\": \"" + outputfile.getName() + "\", \"comment\": \"" + comment
+									+ "\", \"link\": \"http://miro.com\", \"newWindow\": false }",
+							ContentType.APPLICATION_JSON)
+					.addPart(FormBodyPartBuilder.create().setName("file")
+							.setBody(new ByteArrayBody(Files.readAllBytes(outputfile.toPath()), outputfile.getName()))
+							.build());
 
+			postReq.setEntity(entity.build());
 
-    private File downloadAttachment(Integer attachmentId, Integer nodeId, String filename) {
+			HttpResponse response = httpClient.execute(postReq);
 
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-        	
-            String url =serverMainUrl+ "/attachment/download/" + attachmentId + "/";
+			HttpEntity httpEntity = response.getEntity();
+			String apiOutput = EntityUtils.toString(httpEntity);
+			log.debug(apiOutput);
 
-            HttpGet getRequest = new HttpGet(url);
+		} catch (Exception e) {
+			e.toString();
+		}
 
-            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken().replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+	}
 
-            HttpResponse response = httpClient.execute(getRequest);
+	private AttachmentResponseDTO getAttachmentsForNode(Integer nodeId) {
+		log.info("getting attachments for node :" + nodeId);
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+			String url = serverMainUrl + "/attachment/node/" + nodeId + "/";
 
-            int statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode != 200) {
-                throw new RuntimeException("Failed with HTTP error code : " + statusCode);
-            }
-            
-            File downloadedFile = new File(filename);
-            try {
-                FileUtils.copyInputStreamToFile(response.getEntity().getContent(), downloadedFile);
-            } finally {
-            	response.getEntity().getContent().close();
-            }
-            return downloadedFile;
+			HttpGet getRequest = new HttpGet(url);
 
-        } catch (Exception e) {
-            log.error(e.toString());
-        }
-        return null;
+			getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
+					.replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
-    }
+			HttpResponse response = httpClient.execute(getRequest);
 
-    private void uploadAttachment(Integer nodeId, File outputfile, String comment) {
+			// verify the valid error code first
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 200) {
+				throw new RuntimeException("Failed with HTTP error code : " + statusCode);
+			}
 
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            String url = serverMainUrl+ "/attachment/node/" + nodeId + "/";
+			// Now pull back the response object
+			HttpEntity httpEntity = response.getEntity();
+			String apiOutput = EntityUtils.toString(httpEntity);
 
-            HttpPost postReq = new HttpPost(url);
-            postReq.addHeader("Authorization", "Bearer " + authorizationService.getToken().replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
-            
-            MultipartEntityBuilder entity = MultipartEntityBuilder.create()
-                    .setMimeSubtype("mixed")
-                    .addTextBody("attachment", "{ \"name\": \""+outputfile.getName()+"\", \"comment\": \""+comment+"\", \"link\": \"http://miro.com\", \"newWindow\": false }", ContentType.APPLICATION_JSON)
-                    .addPart(FormBodyPartBuilder.create()
-                            .setName("file")
-                            .setBody(new ByteArrayBody(Files.readAllBytes(outputfile.toPath()), outputfile.getName()))
-                    .build());
+			// Lets see what we got from API
+			System.out.println(apiOutput); // <user id="10"><firstName>demo</firstName><lastName>user</lastName></user>
 
-            postReq.setEntity(entity.build());
+			ObjectMapper objectMapper = new ObjectMapper();
 
-            HttpResponse response = httpClient.execute(postReq);
+			AttachmentResponseDTO attachmentsResponse = (AttachmentResponseDTO) objectMapper.readValue(apiOutput,
+					AttachmentResponseDTO.class);
+			return attachmentsResponse;
+		} catch (Exception e) {
+			System.out.println(e.toString());
+		}
+		return null;
 
-            HttpEntity httpEntity = response.getEntity();
-            String apiOutput = EntityUtils.toString(httpEntity);
-            log.debug(apiOutput);
+	}
 
-        } catch (Exception e) {
-            e.toString();
-        }
+	private ListOfChildNodes getChildNodes(Integer fromTreeId, Integer toTreeId, Integer rootNodeId) {
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+			String url = serverMainUrl
+					+ "/node/child/replaceRootNode/from-tree/replaceFromTree/to-tree/replaceToTree?withAdditionalInfo=false";
 
-    }
+			HttpGet getRequest = new HttpGet(url.replace("replaceRootNode", "" + rootNodeId)
+					.replace("replaceFromTree", "" + fromTreeId).replace("replaceToTree", "" + toTreeId));
 
-    private AttachmentResponseDTO getAttachmentsForNode(Integer nodeId) {
+			getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
+					.replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            String url = serverMainUrl+ "/attachment/node/" + nodeId + "/";
+			HttpResponse response = httpClient.execute(getRequest);
 
-            HttpGet getRequest = new HttpGet(url);
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 200) {
+				throw new RuntimeException("Failed with HTTP error code : " + statusCode);
+			}
 
-            getRequest.addHeader("Authorization", "Bearer "
-                    + authorizationService.getToken().replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+			HttpEntity httpEntity = response.getEntity();
+			String apiOutput = EntityUtils.toString(httpEntity);
 
-            HttpResponse response = httpClient.execute(getRequest);
+			log.debug(apiOutput);
 
-            // verify the valid error code first
-            int statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode != 200) {
-                throw new RuntimeException("Failed with HTTP error code : " + statusCode);
-            }
+			ObjectMapper objectMapper = new ObjectMapper();
 
-            // Now pull back the response object
-            HttpEntity httpEntity = response.getEntity();
-            String apiOutput = EntityUtils.toString(httpEntity);
+			ListOfChildNodes nodes = (ListOfChildNodes) objectMapper.readValue(apiOutput, ListOfChildNodes.class);
+			return nodes;
+		} catch (Exception e) {
+			log.error(e.toString());
+		}
+		return null;
+	}
 
-            // Lets see what we got from API
-            System.out.println(apiOutput); // <user id="10"><firstName>demo</firstName><lastName>user</lastName></user>
-
-            ObjectMapper objectMapper = new ObjectMapper();
-
-            AttachmentResponseDTO attachmentsResponse = (AttachmentResponseDTO) objectMapper.readValue(apiOutput,
-                    AttachmentResponseDTO.class);
-            return attachmentsResponse;
-        } catch (Exception e) {
-            System.out.println(e.toString());
-        }
-        return null;
-
-    }
-
-    private ListOfChildNodes getChildNodes(Integer fromTreeId, Integer toTreeId, Integer rootNodeId) {
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            String url = serverMainUrl+ "/node/child/replaceRootNode/from-tree/replaceFromTree/to-tree/replaceToTree?withAdditionalInfo=false";
-
-            HttpGet getRequest = new HttpGet(url.replace("replaceRootNode", "" + rootNodeId)
-                    .replace("replaceFromTree", "" + fromTreeId).replace("replaceToTree", "" + toTreeId));
-
-            getRequest.addHeader("Authorization", "Bearer "
-                    + authorizationService.getToken().replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
-
-            HttpResponse response = httpClient.execute(getRequest);
-
-            int statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode != 200) {
-                throw new RuntimeException("Failed with HTTP error code : " + statusCode);
-            }
-
-            HttpEntity httpEntity = response.getEntity();
-            String apiOutput = EntityUtils.toString(httpEntity);
-
-            log.debug(apiOutput);
-
-            ObjectMapper objectMapper = new ObjectMapper();
-
-            ListOfChildNodes nodes = (ListOfChildNodes) objectMapper.readValue(apiOutput, ListOfChildNodes.class);
-            return nodes;
-        } catch (Exception e) {
-            log.error(e.toString());
-        }
-        return null;
-    }
-
-    private RootNodeDTO getRootNode() {
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpGet getRequest = new HttpGet(serverMainUrl+ "/node/root/24");
-
-            getRequest.addHeader("Authorization", "Bearer "
-                    + authorizationService.getToken().replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
-
-            HttpResponse response = httpClient.execute(getRequest);
-
-            int statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode != 200) {
-                throw new RuntimeException("Failed with HTTP error code : " + statusCode);
-            }
-
-            HttpEntity httpEntity = response.getEntity();
-            String apiOutput = EntityUtils.toString(httpEntity);
-
-            System.out.println(apiOutput);
-
-            ObjectMapper objectMapper = new ObjectMapper();
-
-            RootNodeDTO node = (RootNodeDTO) objectMapper.readValue(apiOutput, RootNodeDTO.class);
-            return node;
-        } catch (Exception e) {
-            log.error(e.toString());
-        }
-        return null;
-    }
-
-    private List<TreeDTO> getMainTree() throws Exception {
-
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpGet getRequest = new HttpGet(serverMainUrl+ "/tree");
-
-            getRequest.addHeader("Authorization", "Bearer "
-                    + authorizationService.getToken().replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
-
-            HttpResponse response = httpClient.execute(getRequest);
-
-            int statusCode = response.getStatusLine().getStatusCode();
-
-            if (statusCode != 200) {
-                throw new RuntimeException("Failed with HTTP error code : " + statusCode);
-            }
-
-            HttpEntity httpEntity = response.getEntity();
-            String apiOutput = EntityUtils.toString(httpEntity);
-            System.out.println(apiOutput);
-            List<TreeDTO> tree = convertTreeFromEntity(apiOutput);
-            List<TreeDTO> finalTree = new ArrayList<TreeDTO>();
-            for (TreeDTO t : tree) {
-                if (Integer.parseInt(t.getStartDate().substring(0, 4)) >= 2019) {
-                    finalTree.add(t);
-                }
-            }
-
-            return finalTree;
-        } catch (IOException e) {
-            log.error(e.toString());
-            return null;
-        }
-    }
-
-    private RootNodeDTO convertNode(String apiOutput)
-            throws JsonParseException, JsonMappingException, IOException {
-
-        return (RootNodeDTO) objectMapper.readValue(apiOutput, RootNodeDTO.class);
-    }
-
-    private List<TreeDTO> convertTreeFromEntity(String apiOutput)
-            throws ParseException, IOException {
-
-        TreeDTO[] treeList = (TreeDTO[]) objectMapper.readValue(apiOutput, TreeDTO[].class);
-        return Arrays.asList(treeList);
-    }
-
-    synchronized private static String getFormatName(String filename) throws IOException {
-        String ext = filename.substring(filename.lastIndexOf(".") + 1);
-        String[] arr = ImageIO.getWriterFormatNames();
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i].equals(ext))
-                return ext;
-        }
-        throw new IOException("file [" + filename + "] has a format not supported [" + ext + "]");
-    }
-
-    synchronized public static BufferedImage resize(String filename, BufferedImage orig, int width, int height)
-            throws IOException {
-        if (width > 0 || height > 0) {
-
-            Mode mode = Mode.AUTOMATIC;
-            if (height == 0)
-                mode = Mode.FIT_TO_WIDTH;
-            else if (width == 0)
-                mode = Mode.FIT_TO_HEIGHT;
-
-            BufferedImage src = orig;
-            BufferedImage thumbnail = null;
-            if (src.getHeight() < height && src.getWidth() < width) {
-                thumbnail = src;
-            } else {
-                thumbnail = Scalr.resize(src, Method.ULTRA_QUALITY, mode, width, height);
-            }
-            return thumbnail;
-        }
-        return null;
-    }
-
+	private RootNodeDTO getRootNode() {
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+			HttpGet getRequest = new HttpGet(serverMainUrl + "/node/root/24");
+
+			getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
+					.replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+
+			HttpResponse response = httpClient.execute(getRequest);
+
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 200) {
+				throw new RuntimeException("Failed with HTTP error code : " + statusCode);
+			}
+
+			HttpEntity httpEntity = response.getEntity();
+			String apiOutput = EntityUtils.toString(httpEntity);
+
+			System.out.println(apiOutput);
+
+			ObjectMapper objectMapper = new ObjectMapper();
+
+			RootNodeDTO node = (RootNodeDTO) objectMapper.readValue(apiOutput, RootNodeDTO.class);
+			return node;
+		} catch (Exception e) {
+			log.error(e.toString());
+		}
+		return null;
+	}
+
+	private List<TreeDTO> getMainTree() throws Exception {
+
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+			HttpGet getRequest = new HttpGet(serverMainUrl + "/tree");
+
+			getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
+					.replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+
+			HttpResponse response = httpClient.execute(getRequest);
+
+			int statusCode = response.getStatusLine().getStatusCode();
+
+			if (statusCode != 200) {
+				throw new RuntimeException("Failed with HTTP error code : " + statusCode);
+			}
+
+			HttpEntity httpEntity = response.getEntity();
+			String apiOutput = EntityUtils.toString(httpEntity);
+			System.out.println(apiOutput);
+			List<TreeDTO> tree = convertTreeFromEntity(apiOutput);
+			List<TreeDTO> finalTree = new ArrayList<TreeDTO>();
+			for (TreeDTO t : tree) {
+				if (Integer.parseInt(t.getStartDate().substring(0, 4)) >= 2019) {
+					finalTree.add(t);
+				}
+			}
+
+			return finalTree;
+		} catch (IOException e) {
+			log.error(e.toString());
+			return null;
+		}
+	}
+
+	private RootNodeDTO convertNode(String apiOutput) throws JsonParseException, JsonMappingException, IOException {
+
+		return (RootNodeDTO) objectMapper.readValue(apiOutput, RootNodeDTO.class);
+	}
+
+	private List<TreeDTO> convertTreeFromEntity(String apiOutput) throws ParseException, IOException {
+
+		TreeDTO[] treeList = (TreeDTO[]) objectMapper.readValue(apiOutput, TreeDTO[].class);
+		return Arrays.asList(treeList);
+	}
+
+	synchronized private static String getFormatName(String filename) throws IOException {
+		String ext = filename.substring(filename.lastIndexOf(".") + 1);
+		String[] arr = ImageIO.getWriterFormatNames();
+		for (int i = 0; i < arr.length; i++) {
+			if (arr[i].equals(ext))
+				return ext;
+		}
+		throw new IOException("file [" + filename + "] has a format not supported [" + ext + "]");
+	}
+
+	synchronized public static BufferedImage resize(String filename, BufferedImage orig, int width, int height) {
+		try {
+			if (width > 0 || height > 0) {
+
+				Mode mode = Mode.AUTOMATIC;
+				if (height == 0)
+					mode = Mode.FIT_TO_WIDTH;
+				else if (width == 0)
+					mode = Mode.FIT_TO_HEIGHT;
+
+				BufferedImage src = orig;
+				BufferedImage thumbnail = null;
+				if (src.getHeight() < height && src.getWidth() < width) {
+					thumbnail = src;
+				} else {
+					thumbnail = Scalr.resize(src, Method.ULTRA_QUALITY, mode, width, height);
+				}
+				return thumbnail;
+			}
+		} catch (IllegalArgumentException e) {
+			log.error("IllegalArgumentException height:" + height + " width:" + width, e);
+		} catch (ImagingOpException ex) {
+			log.error("ImagingOpException: ", ex);
+		}
+		return null;
+	}
 
 }
