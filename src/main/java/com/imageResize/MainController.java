@@ -26,8 +26,8 @@ public class MainController {
 	@ResponseBody
 	@Async
 	public String runResize() throws Exception {
-		imageResize.resizeTest();
-		return "Mannual iamge resize run!";
+		imageResize.runResize();
+		return "Mannual image resize running!";
 	}
 
 }

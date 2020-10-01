@@ -12,11 +12,17 @@ public class AttachmentResponseDTO implements Serializable
     @JsonProperty("totalElements")
     private Integer totalElements;
     
+    @JsonProperty("numberOfElements")
+    private Integer numberOfElements;
+    
     @JsonProperty("limit")
     private Integer limit;
     
     @JsonProperty("offset")
     private Integer offset;
+    
+    @JsonProperty("pageNumber")
+    private Integer pageNumber;
 
     @JsonProperty("content")
     private List<AttachmentDTO> attachments;

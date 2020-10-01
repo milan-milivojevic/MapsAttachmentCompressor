@@ -6,7 +6,7 @@ public interface ImageResize {
 	
 	void resizeScheduled();
 	
-	void resizeTest() throws IOException, Exception;
+	void runResize();
 
 	public int getTotalNodes();
 	

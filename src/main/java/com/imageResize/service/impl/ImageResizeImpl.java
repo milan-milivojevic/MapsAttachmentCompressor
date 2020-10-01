@@ -31,10 +31,8 @@ import org.apache.http.util.EntityUtils;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.imgscalr.Scalr.Mode;
-import org.junit.runners.AllTests;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
@@ -72,6 +70,7 @@ public class ImageResizeImpl implements ImageResize {
 	public int totalNodes;
 	public int processedNodes;
 	private String serverMainUrl;
+	private String fileTmpPath;
 
 	@Override
 	public int getTotalNodes() {
@@ -81,6 +80,7 @@ public class ImageResizeImpl implements ImageResize {
 	@PostConstruct
 	private void init() {
 		serverMainUrl = env.getProperty("server.main.path");
+		fileTmpPath = env.getProperty("file.tmp.path");
 	}
 
 	public void setTotalNodes(int totalNodes) {
@@ -100,31 +100,12 @@ public class ImageResizeImpl implements ImageResize {
 	public void resizeScheduled() {
 	}
 
-	@Override
-	@Async
-	public void resizeTest() throws Exception {
-		log.info(serverMainUrl);
-		List<Integer> level9 = excelConverter.readFile();
-		
-		
-		 //List<Integer> level9 = new ArrayList<Integer>();
-		 //level9.remove(138583 );
-		// process(level9);
-		
-		process(level9);
-
-	}
-
-	public static void main(String[] args) throws Exception {
-
-		// List<NodeDTO> level9 = getLevelNineNodes();
-		// List<NodeDTO> testNodeList = new ArrayList<NodeDTO>();
-		// NodeDTO testN = new NodeDTO();
-		// testN.setId(255965);
-		// testNodeList.add(testN);
-		// downloadAttachment(45704, 255965);
-
-		// process(testNodeList);
+	private void cleanTmpFolder() {
+		try {
+			FileUtils.cleanDirectory(new File(fileTmpPath));
+		} catch (IOException e) {
+			log.error("Can not delete files in tmp folder:"+fileTmpPath,e);
+		}
 	}
 
 	private List<NodeDTO> getLevelNineNodes() throws Exception {
@@ -200,22 +181,38 @@ public class ImageResizeImpl implements ImageResize {
 		for (Integer n : levelNine) {
 			log.info("processing node id: " + n);
 			AttachmentResponseDTO allAttachments = getAttachmentsForNode(n);
-			log.info("received attachemnts for node id: " + n + " count="+allAttachments.getTotalElements());
-			for (AttachmentDTO attach : allAttachments.getAttachments()) {
-				processedNodes++;
-				if (isFIleExtensionAccepted(attach)
-						&& !checkIfAttachmentIsProccessed(attach.getAttachmentFileName(), allAttachments)) {
-					log.info("processing RESIZE for node id: " + n + " for attachment name:" +attach.getAttachmentFileName() );
-					File resized = resizeAttachment(attach, n);
-					if(resized != null) {
-						uploadAttachment(n, resized, attach.getComment());
-					}else {
-						log.info("SOMETHING WENT WRONG FOR NODE ID:" + n + " ATTACHMENT ID:" + attach.getAnnexAttachmentId());
+
+			if (allAttachments != null) {
+				log.info("received attachemnts for node id: " + n + " count=" + allAttachments.getTotalElements());
+
+				for (AttachmentDTO attach : allAttachments.getAttachments()) {
+					processedNodes++;
+					if (isFIleExtensionAccepted(attach)
+							&& !checkIfAttachmentIsProccessed(attach.getAttachmentFileName(), allAttachments)) {
+						log.info("processing RESIZE for node id: " + n + " for attachment name:"
+								+ attach.getAttachmentFileName());
+						File resized = resizeAttachment(attach, n);
+						
+						if (resized != null) {
+							uploadAttachment(n, resized, attach.getComment());
+						} else {
+							log.info("SOMETHING WENT WRONG FOR NODE ID:" + n + " ATTACHMENT ID:"
+									+ attach.getAnnexAttachmentId());
+						}
 					}
 				}
 			}
 		}
+		emptyTmpFolder();
 		log.info("Proccess is DONE!!!");
+	}
+	
+	private void emptyTmpFolder() {
+		try {
+			File directory = new File(fileTmpPath);
+			FileUtils.cleanDirectory(directory);
+		} catch (Exception e) {
+		}
 	}
 
 	private boolean isFIleExtensionAccepted(AttachmentDTO attach) {
@@ -238,57 +235,140 @@ public class ImageResizeImpl implements ImageResize {
 		return false;
 	}
 
+	private File resizeAttachmentINS(AttachmentDTO attach, Integer nodeId) throws IOException {
+		InputStream targetStream =downloadAttachmentINS(attach.getAnnexAttachmentId(), nodeId, attach.getAttachmentFileName());
+		try {
+			if (targetStream != null) {
+
+				BufferedImage image = ImageIO.read(targetStream);
+				int originalHeight = image.getHeight();
+				int originalWidth = image.getWidth();
+				int differnece = 0;
+				int resizedWidth = 0;
+				int resizeHeight = 0;
+
+				if (originalHeight > 500) {
+					if (originalHeight <= originalWidth) {
+						differnece = originalHeight - 500;
+						resizedWidth = originalWidth - differnece;
+						resizeHeight = 500;
+
+					} else {
+						resizeHeight = 500;
+						resizedWidth = originalWidth;
+						// h = 600
+						// w 100
+					}
+				} else {
+					resizeHeight = originalHeight;
+					resizedWidth = originalWidth;
+				}
+
+				log.info("resizeHeight = " + resizeHeight);
+				log.info("resizedWidth = " + resizedWidth);
+
+				String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
+
+				BufferedImage dimg = null;
+				if (originalHeight > 500) {
+					dimg = resize(FILE_PREFIX + attach.getAttachmentFileName(), image, resizeHeight, resizedWidth);
+
+					File resizedFile = new File(FILE_PREFIX + attach.getAttachmentFileName());
+					ImageIO.write(dimg, fileExtension, resizedFile);
+					return resizedFile;
+				} else {
+					File resizedFile = new File(FILE_PREFIX + attach.getAttachmentFileName());
+					ImageIO.write(image, fileExtension, resizedFile);
+					return resizedFile;
+				}
+			}
+		} catch (Exception e) {
+			log.error("Error resizing image: ", e);
+		}
+		return null;
+	}
+	
 	private File resizeAttachment(AttachmentDTO attach, Integer nodeId) throws IOException {
 		File outputfile = downloadAttachment(attach.getAnnexAttachmentId(), nodeId, attach.getAttachmentFileName());
+		try {
+			if (outputfile != null) {
+				InputStream targetStream = new FileInputStream(outputfile);
 
-		if (outputfile != null) {
-			InputStream targetStream = new FileInputStream(outputfile);
+				BufferedImage image = ImageIO.read(targetStream);
+				int originalHeight = image.getHeight();
+				int originalWidth = image.getWidth();
+				int differnece = 0;
+				int resizedWidth = 0;
+				int resizeHeight = 0;
 
-			BufferedImage image = ImageIO.read(targetStream);
-			int originalHeight = image.getHeight();
-			int originalWidth = image.getWidth();
-			int differnece = 0;
-			int resizedWidth = 0;
-			int resizeHeight = 0;
+				if (originalHeight > 500) {
+					if (originalHeight <= originalWidth) {
+						differnece = originalHeight - 500;
+						resizedWidth = originalWidth - differnece;
+						resizeHeight = 500;
 
-			if (originalHeight > 500) {
-				if (originalHeight <= originalWidth) {
-					differnece = originalHeight - 500;
-					resizedWidth = originalWidth - differnece;
-					resizeHeight = 500;
-
+					} else {
+						resizeHeight = 500;
+						resizedWidth = originalWidth;
+						// h = 600
+						// w 100
+					}
 				} else {
-					resizeHeight = 500;
+					resizeHeight = originalHeight;
 					resizedWidth = originalWidth;
-					// h = 600
-					// w 100
 				}
-			} else {
-				resizeHeight = originalHeight;
-				resizedWidth = originalWidth;
+
+				log.info("resizeHeight = " + resizeHeight);
+				log.info("resizedWidth = " + resizedWidth);
+
+				String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
+
+				BufferedImage dimg = null;
+				if (originalHeight > 500) {
+					dimg = resize(FILE_PREFIX + outputfile.getName(), image, resizeHeight, resizedWidth);
+
+					File resizedFile = new File(fileTmpPath,FILE_PREFIX + outputfile.getName());
+					ImageIO.write(dimg, fileExtension, resizedFile);
+					return resizedFile;
+				} else {
+					File resizedFile = new File(fileTmpPath,FILE_PREFIX + outputfile.getName());
+					ImageIO.write(image, fileExtension, resizedFile);
+					return resizedFile;
+				}
 			}
+		} catch (Exception e) {
 
-			log.info("resizeHeight = " + resizeHeight);
-			log.info("resizedWidth = " + resizedWidth);
-
-			String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
-
-			BufferedImage dimg = null;
-			if (originalHeight > 500) {
-				dimg = resize(FILE_PREFIX + outputfile.getName(), image, resizeHeight, resizedWidth);
-
-				File resizedFile = new File(FILE_PREFIX + outputfile.getName());
-				ImageIO.write(dimg, fileExtension, resizedFile);
-				return resizedFile;
-			} else {
-				File resizedFile = new File(FILE_PREFIX + outputfile.getName());
-				ImageIO.write(image, fileExtension, resizedFile);
-				return resizedFile;
-			}
 		}
 		return null;
 	}
 
+	private InputStream downloadAttachmentINS(Integer attachmentId, Integer nodeId, String filename) {
+
+		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+
+			String url = serverMainUrl + "/attachment/download/" + attachmentId + "/";
+
+			HttpGet getRequest = new HttpGet(url);
+
+			getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
+					.replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+
+			HttpResponse response = httpClient.execute(getRequest);
+
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 200) {
+				throw new RuntimeException("Failed to download attachment with id:"+attachmentId+" for NODE ID:"+nodeId+" with HTTP error code : " + statusCode);
+			}
+			InputStream in=response.getEntity().getContent();
+			return in;
+
+		} catch (Exception e) {
+			log.error(e.toString());
+		}
+		return null;
+
+	}
+	
 	private File downloadAttachment(Integer attachmentId, Integer nodeId, String filename) {
 
 		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
@@ -307,7 +387,7 @@ public class ImageResizeImpl implements ImageResize {
 				throw new RuntimeException("Failed to download attachment with id:"+attachmentId+" for NODE ID:"+nodeId+" with HTTP error code : " + statusCode);
 			}
 
-			File downloadedFile = new File(filename);
+			File downloadedFile = new File(fileTmpPath,filename);
 			try {
 				FileUtils.copyInputStreamToFile(response.getEntity().getContent(), downloadedFile);
 			} finally {
@@ -334,7 +414,7 @@ public class ImageResizeImpl implements ImageResize {
 			MultipartEntityBuilder entity = MultipartEntityBuilder.create().setMimeSubtype("mixed")
 					.addTextBody("attachment",
 							"{ \"name\": \"" + outputfile.getName() + "\", \"comment\": \"" + comment
-									+ "\", \"link\": \"http://miro.com\", \"newWindow\": false }",
+									+ "\", \"link\": \"\", \"newWindow\": false }",
 							ContentType.APPLICATION_JSON)
 					.addPart(FormBodyPartBuilder.create().setName("file")
 							.setBody(new ByteArrayBody(Files.readAllBytes(outputfile.toPath()), outputfile.getName()))
@@ -533,6 +613,16 @@ public class ImageResizeImpl implements ImageResize {
 			log.error("ImagingOpException: ", ex);
 		}
 		return null;
+	}
+
+	@Override
+	public void runResize() {
+        List<Integer> levelNine = excelConverter.readFile();
+        try {
+			process(levelNine);
+		} catch (IOException e) {
+			log.error("Error in resize processing:",e);
+		}
 	}
 
 }

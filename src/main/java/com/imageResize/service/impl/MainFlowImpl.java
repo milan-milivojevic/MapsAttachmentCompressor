@@ -2,7 +2,6 @@ package com.imageResize.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.imageResize.service.ImageResize;
@@ -16,10 +15,9 @@ public class MainFlowImpl implements MainFlow {
 	ImageResize imageResize;
 
 	@Override
-	//@Scheduled(cron = "0 33 13 * * *")
-	//@Scheduled(fixedDelay = 120000)
+	//@Scheduled(cron = "0 0 1 * * *")
 	public void resizeScheduler() throws Exception {
 		System.out.println("working");
-		imageResize.resizeTest();
+		imageResize.runResize();
 	};
 }
