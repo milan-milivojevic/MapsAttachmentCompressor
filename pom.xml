@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.brandmaker.cs.skyhigh.imageResize</groupId>
 	<artifactId>MapsAttachmentCompressor</artifactId>
-	<version>1.0.1</version>
+	<version>1.0.1_${project.build.warname}</version>
 	<name>MapsAttachmentCompressor</name>
 	<description>Project for attachment compression</description>
 
@@ -238,9 +238,28 @@
 			<version>4.5.12</version>
 		</dependency>
 	</dependencies>
+	<profiles>
+        <profile>
+            <id>qa</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <project.build.warname>qa</project.build.warname>
+                <activatedProperties>qa</activatedProperties>
+            </properties>
+        </profile>
+        <profile>
+            <id>prod</id>
+            <properties>
+                <project.build.warname>prod</project.build.warname>
+                <activatedProperties>prod</activatedProperties>
+            </properties>
+        </profile>
+    </profiles>
 	<packaging>war</packaging>
 	<build>
-		<finalName>${project.artifactId}</finalName>
+		<finalName>${project.artifactId}-${version}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
