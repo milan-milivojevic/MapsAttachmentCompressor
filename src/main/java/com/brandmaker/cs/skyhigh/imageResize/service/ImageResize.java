@@ -1,6 +1,4 @@
-package com.imageResize.service;
-
-import java.io.IOException;
+package com.brandmaker.cs.skyhigh.imageResize.service;
 
 public interface ImageResize {
 	

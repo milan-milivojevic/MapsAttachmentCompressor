@@ -1,4 +1,4 @@
-package com.imageResize;
+package com.brandmaker.cs.skyhigh.imageResize;
 
 import org.springframework.boot.web.servlet.error.ErrorController;
 

@@ -1,4 +1,4 @@
-package com.imageResize;
+package com.brandmaker.cs.skyhigh.imageResize;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,4 +1,4 @@
-package com.imageResize.service.impl;
+package com.brandmaker.cs.skyhigh.imageResize.service.impl;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.ImagingOpException;
@@ -36,18 +36,18 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
+import com.brandmaker.cs.skyhigh.imageResize.dto.AttachmentDTO;
+import com.brandmaker.cs.skyhigh.imageResize.dto.AttachmentResponseDTO;
+import com.brandmaker.cs.skyhigh.imageResize.dto.ListOfChildNodes;
+import com.brandmaker.cs.skyhigh.imageResize.dto.NodeDTO;
+import com.brandmaker.cs.skyhigh.imageResize.dto.RootNodeDTO;
+import com.brandmaker.cs.skyhigh.imageResize.dto.TreeDTO;
+import com.brandmaker.cs.skyhigh.imageResize.service.AuthorizationService;
+import com.brandmaker.cs.skyhigh.imageResize.service.ExcelConverter;
+import com.brandmaker.cs.skyhigh.imageResize.service.ImageResize;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.imageResize.dto.AttachmentDTO;
-import com.imageResize.dto.AttachmentResponseDTO;
-import com.imageResize.dto.ListOfChildNodes;
-import com.imageResize.dto.NodeDTO;
-import com.imageResize.dto.RootNodeDTO;
-import com.imageResize.dto.TreeDTO;
-import com.imageResize.service.AuthorizationService;
-import com.imageResize.service.ExcelConverter;
-import com.imageResize.service.ImageResize;
 
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,4 +1,4 @@
-package com.imageResize.dto;
+package com.brandmaker.cs.skyhigh.imageResize.dto;
 
 import java.io.Serializable;
 import java.util.List;

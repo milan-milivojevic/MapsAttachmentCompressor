@@ -1,11 +1,11 @@
-package com.imageResize.service.impl;
+package com.brandmaker.cs.skyhigh.imageResize.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Service;
 
-import com.imageResize.service.ImageResize;
-import com.imageResize.service.MainFlow;
+import com.brandmaker.cs.skyhigh.imageResize.service.ImageResize;
+import com.brandmaker.cs.skyhigh.imageResize.service.MainFlow;
 
 @EnableScheduling
 @Service

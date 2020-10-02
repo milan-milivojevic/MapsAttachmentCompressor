@@ -1,4 +1,4 @@
-package com.imageResize.service.impl;
+package com.brandmaker.cs.skyhigh.imageResize.service.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import com.imageResize.service.ExcelConverter;
+import com.brandmaker.cs.skyhigh.imageResize.service.ExcelConverter;
 
 @Service
 public class ExcelConverterImpl implements ExcelConverter {

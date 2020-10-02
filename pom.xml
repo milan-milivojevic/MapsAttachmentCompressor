@@ -8,10 +8,25 @@
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.2.6.RELEASE</version>
 	</parent>
-	<groupId>com.imageResize</groupId>
-	<artifactId>image-resize</artifactId>
+	<groupId>com.brandmaker.cs.skyhigh.imageResize</groupId>
+	<artifactId>MapsAttachmentCompressor</artifactId>
 	<version>1.0.1</version>
-	<name>imageResize</name>
+	<name>MapsAttachmentCompressor</name>
+	<description>Project for attachment compression</description>
+
+	<distributionManagement>
+		<repository>
+			<id>brandmaker-release-repository</id>
+			<uniqueVersion>false</uniqueVersion>
+			<url>https://nexus.brandmaker.com/content/repositories/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>brandmaker-snapshot-repository</id>
+			<uniqueVersion>true</uniqueVersion>
+			<url>https://nexus.brandmaker.com/content/repositories/snapshots</url>
+		</snapshotRepository>
+
+	</distributionManagement>
 
 	<properties>
 		<java.version>1.8</java.version>
@@ -146,21 +161,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
-		<!--<dependency> <groupId>com.github.ulisesbocchio</groupId> <artifactId>jasypt-spring-boot-starter</artifactId> 
-			<version>3.0.3</version> </dependency> -->
-
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcprov-jdk15on</artifactId>
 			<version>1.65.01</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcpg-jdk15on -->
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcpg-jdk15on</artifactId>
 			<version>1.65</version>
 		</dependency>
-
 		<dependency>
 			<groupId>name.neuhalfen.projects.crypto.bouncycastle.openpgp</groupId>
 			<artifactId>bouncy-gpg</artifactId>
@@ -227,9 +237,6 @@
 			<artifactId>httpmime</artifactId>
 			<version>4.5.12</version>
 		</dependency>
-
-		<!--<dependency> <groupId>io.undertow</groupId> <artifactId>undertow-servlet</artifactId> 
-			</dependency> -->
 	</dependencies>
 	<packaging>war</packaging>
 	<build>
