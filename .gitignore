@@ -3,3 +3,6 @@
 .project
 .classpath
 .mvn/
+*.gitignore
+MapsAttachmentCompressor.iml
+.idea/
