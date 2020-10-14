@@ -55,6 +55,8 @@ import lombok.extern.slf4j.Slf4j;
 @EnableAsync
 @Slf4j
 public class ImageResizeImpl implements ImageResize {
+	
+	private static final int HEIGHT=1024;
 
 	@Autowired
 	private Environment env;
@@ -247,14 +249,14 @@ public class ImageResizeImpl implements ImageResize {
 				int resizedWidth = 0;
 				int resizeHeight = 0;
 
-				if (originalHeight > 500) {
+				if (originalHeight > HEIGHT) {
 					if (originalHeight <= originalWidth) {
-						differnece = originalHeight - 500;
+						differnece = originalHeight - HEIGHT;
 						resizedWidth = originalWidth - differnece;
-						resizeHeight = 500;
+						resizeHeight = HEIGHT;
 
 					} else {
-						resizeHeight = 500;
+						resizeHeight = HEIGHT;
 						resizedWidth = originalWidth;
 						// h = 600
 						// w 100
@@ -270,7 +272,7 @@ public class ImageResizeImpl implements ImageResize {
 				String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
 
 				BufferedImage dimg = null;
-				if (originalHeight > 500) {
+				if (originalHeight > HEIGHT) {
 					dimg = resize(FILE_PREFIX + attach.getAttachmentFileName(), image, resizeHeight, resizedWidth);
 
 					File resizedFile = new File(FILE_PREFIX + attach.getAttachmentFileName());
@@ -301,14 +303,14 @@ public class ImageResizeImpl implements ImageResize {
 				int resizedWidth = 0;
 				int resizeHeight = 0;
 
-				if (originalHeight > 500) {
+				if (originalHeight > HEIGHT) {
 					if (originalHeight <= originalWidth) {
-						differnece = originalHeight - 500;
+						differnece = originalHeight - HEIGHT;
 						resizedWidth = originalWidth - differnece;
-						resizeHeight = 500;
+						resizeHeight = HEIGHT;
 
 					} else {
-						resizeHeight = 500;
+						resizeHeight = HEIGHT;
 						resizedWidth = originalWidth;
 						// h = 600
 						// w 100
@@ -324,7 +326,7 @@ public class ImageResizeImpl implements ImageResize {
 				String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
 
 				BufferedImage dimg = null;
-				if (originalHeight > 500) {
+				if (originalHeight > HEIGHT) {
 					dimg = resize(FILE_PREFIX + outputfile.getName(), image, resizeHeight, resizedWidth);
 
 					File resizedFile = new File(fileTmpPath,FILE_PREFIX + outputfile.getName());
@@ -617,7 +619,8 @@ public class ImageResizeImpl implements ImageResize {
 
 	@Override
 	public void runResize() {
-        List<Integer> levelNine = excelConverter.readFile();
+        //List<Integer> levelNine = excelConverter.readFile();
+        List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(163794);
         try {
 			process(levelNine);
 		} catch (IOException e) {
