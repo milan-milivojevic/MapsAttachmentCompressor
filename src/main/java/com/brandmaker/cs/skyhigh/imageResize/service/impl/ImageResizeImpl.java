@@ -619,8 +619,8 @@ public class ImageResizeImpl implements ImageResize {
 
 	@Override
 	public void runResize() {
-        //List<Integer> levelNine = excelConverter.readFile();
-        List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(163794);
+        List<Integer> levelNine = excelConverter.readFile();
+        //List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(163794);
         try {
 			process(levelNine);
 		} catch (IOException e) {
