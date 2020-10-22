@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 
 import com.brandmaker.cs.skyhigh.imageResize.service.ExcelConverter;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class ExcelConverterImpl implements ExcelConverter {
 
@@ -25,9 +28,9 @@ public class ExcelConverterImpl implements ExcelConverter {
 	@Override
 	public List<Integer> readFile() {
 		List<Integer> result = new ArrayList<Integer>();
-		
+
 		File file = new File(env.getProperty("file.nodes.path"));
-		System.out.println(file.getName());
+		log.info(file.getName());
 		try {
 			POIFSFileSystem fs = new POIFSFileSystem(new FileInputStream(file));
 			HSSFWorkbook wb = new HSSFWorkbook(fs);
@@ -55,11 +58,24 @@ public class ExcelConverterImpl implements ExcelConverter {
 			for (int r = 1; r < rows; r++) {
 				row = sheet.getRow(r);
 				if (row != null) {
-					HSSFCell firstCell = row.getCell((short) 0);
-					if (firstCell != null) {
-						Double value = firstCell.getNumericCellValue();
-						result.add(value.intValue());
-						System.out.println(value.intValue());
+
+					try {
+						HSSFCell firstCell = row.getCell((short) 0);
+						if (firstCell != null) {
+							Double value = firstCell.getNumericCellValue();
+							result.add(value.intValue());
+							log.info("Reading Number cell value:" + value.intValue());
+						}
+					} catch (IllegalStateException ise) {
+						HSSFCell firstCell = row.getCell((short) 0);
+						String cellValue = firstCell.getStringCellValue();
+						try {
+							result.add(Integer.parseInt(cellValue.replace(".", "").replace(",", "").trim()));
+						} catch (Exception e) {
+						}
+						log.info("Reading String cell value :" + cellValue);
+					} catch (Exception e) {
+						log.info("Error reading field from excel: " + e.toString());
 					}
 				}
 			}
