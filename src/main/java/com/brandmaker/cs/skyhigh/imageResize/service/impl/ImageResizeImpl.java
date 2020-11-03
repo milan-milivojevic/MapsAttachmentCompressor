@@ -190,7 +190,7 @@ public class ImageResizeImpl implements ImageResize {
 				for (AttachmentDTO attach : allAttachments.getAttachments()) {
 					processedNodes++;
 					if (isFIleExtensionAccepted(attach)
-							&& !checkIfAttachmentIsProccessed(attach.getAttachmentFileName(), allAttachments)) {
+							&& !isAttachmentProcessed(attach.getAttachmentFileName(), allAttachments)) {
 						log.info("processing RESIZE for node id: " + n + " for attachment name:"
 								+ attach.getAttachmentFileName());
 						File resized = resizeAttachment(attach, n);
@@ -226,68 +226,17 @@ public class ImageResizeImpl implements ImageResize {
 		return false;
 	}
 
-	private static boolean checkIfAttachmentIsProccessed(String filename, AttachmentResponseDTO allAttachments) {
+	private static boolean isAttachmentProcessed(String filename, AttachmentResponseDTO allAttachments) {
 
 		for (AttachmentDTO attach : allAttachments.getAttachments()) {
-			if (attach.getAttachmentFileName().contains(FILE_PREFIX)) {
+			if(filename.contains(FILE_PREFIX)) {
+				return true;
+			}
+			else if (attach.getAttachmentFileName().equalsIgnoreCase(FILE_PREFIX+filename)) {
 				return true;
 			}
 		}
-
 		return false;
-	}
-
-	private File resizeAttachmentINS(AttachmentDTO attach, Integer nodeId) throws IOException {
-		InputStream targetStream =downloadAttachmentINS(attach.getAnnexAttachmentId(), nodeId, attach.getAttachmentFileName());
-		try {
-			if (targetStream != null) {
-
-				BufferedImage image = ImageIO.read(targetStream);
-				int originalHeight = image.getHeight();
-				int originalWidth = image.getWidth();
-				int differnece = 0;
-				int resizedWidth = 0;
-				int resizeHeight = 0;
-
-				if (originalHeight > HEIGHT) {
-					if (originalHeight <= originalWidth) {
-						differnece = originalHeight - HEIGHT;
-						resizedWidth = originalWidth - differnece;
-						resizeHeight = HEIGHT;
-
-					} else {
-						resizeHeight = HEIGHT;
-						resizedWidth = originalWidth;
-						// h = 600
-						// w 100
-					}
-				} else {
-					resizeHeight = originalHeight;
-					resizedWidth = originalWidth;
-				}
-
-				log.info("resizeHeight = " + resizeHeight);
-				log.info("resizedWidth = " + resizedWidth);
-
-				String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
-
-				BufferedImage dimg = null;
-				if (originalHeight > HEIGHT) {
-					dimg = resize(FILE_PREFIX + attach.getAttachmentFileName(), image, resizeHeight, resizedWidth);
-
-					File resizedFile = new File(FILE_PREFIX + attach.getAttachmentFileName());
-					ImageIO.write(dimg, fileExtension, resizedFile);
-					return resizedFile;
-				} else {
-					File resizedFile = new File(FILE_PREFIX + attach.getAttachmentFileName());
-					ImageIO.write(image, fileExtension, resizedFile);
-					return resizedFile;
-				}
-			}
-		} catch (Exception e) {
-			log.error("Error resizing image: ", e);
-		}
-		return null;
 	}
 	
 	private File resizeAttachment(AttachmentDTO attach, Integer nodeId) throws IOException {
