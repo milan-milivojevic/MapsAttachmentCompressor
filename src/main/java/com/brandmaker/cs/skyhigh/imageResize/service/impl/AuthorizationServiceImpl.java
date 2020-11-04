@@ -29,13 +29,15 @@ public class AuthorizationServiceImpl implements AuthorizationService{
 
 		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
 			
-			String url =env.getProperty("server.token.url");
+			String url = env.getProperty("server.token.url");
+			String user = env.getProperty("api.user");
+			String password = env.getProperty("api.password");
 			
 			HttpPost postRequest = new HttpPost(url);
 
 			postRequest.addHeader("content-type", "application/x-www-form-urlencoded");
 
-			StringEntity userEntity = new StringEntity("login=Firat.Kilic&password=Porsche@2020");
+			StringEntity userEntity = new StringEntity("login="+user+"&password="+password);
 			postRequest.setEntity(userEntity);
 
 			HttpResponse response = httpClient.execute(postRequest);
