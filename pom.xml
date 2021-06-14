@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.brandmaker.cs.skyhigh.imageResize</groupId>
 	<artifactId>MapsAttachmentCompressor</artifactId>
-	<version>1.0.9_${project.build.warname}</version>
+	<version>1.1.0_${project.build.warname}</version>
 	<name>MapsAttachmentCompressor</name>
 	<description>Project for attachment compression</description>
 
