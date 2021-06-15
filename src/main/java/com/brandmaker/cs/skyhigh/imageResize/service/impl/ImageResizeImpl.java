@@ -182,28 +182,39 @@ public class ImageResizeImpl implements ImageResize {
 
 		for (Integer n : levelNine) {
 			log.info("processing node id: " + n);
-			AttachmentResponseDTO allAttachments = getAttachmentsForNode(n);
+			int totalElements = 0;
+			int offset = 0;
+			boolean read = false;
+			do {
+				AttachmentResponseDTO allAttachments = getAttachmentsForNode(n, offset);
+				if (!read) {
+					totalElements = allAttachments.getTotalElements();
+					read = true;
+				}
+				if (allAttachments != null) {
+					log.info("received attachemnts for node id: " + n + " count= " + allAttachments.getTotalElements());
 
-			if (allAttachments != null) {
-				log.info("received attachemnts for node id: " + n + " count=" + allAttachments.getTotalElements());
+					for (AttachmentDTO attach : allAttachments.getAttachments()) {
+						processedNodes++;
+						if (isFIleExtensionAccepted(attach)
+								&& !isAttachmentProcessed(attach.getAttachmentFileName(), allAttachments)) {
+							log.info("processing RESIZE for node id: " + n + " for attachment name:"
+									+ attach.getAttachmentFileName());
+							File resized = resizeAttachment(attach, n);
 
-				for (AttachmentDTO attach : allAttachments.getAttachments()) {
-					processedNodes++;
-					if (isFIleExtensionAccepted(attach)
-							&& !isAttachmentProcessed(attach.getAttachmentFileName(), allAttachments)) {
-						log.info("processing RESIZE for node id: " + n + " for attachment name:"
-								+ attach.getAttachmentFileName());
-						File resized = resizeAttachment(attach, n);
-						
-						if (resized != null) {
-							uploadAttachment(n, resized, attach.getComment());
-						} else {
-							log.info("SOMETHING WENT WRONG FOR NODE ID:" + n + " ATTACHMENT ID:"
-									+ attach.getAnnexAttachmentId());
+							if (resized != null) {
+								uploadAttachment(n, resized, attach.getComment());
+							} else {
+								log.info("SOMETHING WENT WRONG FOR NODE ID:" + n + " ATTACHMENT ID:"
+										+ attach.getAnnexAttachmentId());
+							}
 						}
 					}
 				}
-			}
+				totalElements -= 100;
+				offset += 100;
+			} while (totalElements > 0);
+
 		}
 		emptyTmpFolder();
 		log.info("Proccess is DONE!!!");
@@ -385,10 +396,11 @@ public class ImageResizeImpl implements ImageResize {
 
 	}
 
-	private AttachmentResponseDTO getAttachmentsForNode(Integer nodeId) {
+	private AttachmentResponseDTO getAttachmentsForNode(Integer nodeId, Integer offset) {
 		log.info("getting attachments for node :" + nodeId);
 		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-			String url = serverMainUrl + "/attachment/node/" + nodeId + "/";
+//			String url = serverMainUrl + "/attachment/node/" + nodeId + "/";
+			String url = serverMainUrl + "/attachment/node/" + nodeId + "?offset=" + offset;
 
 			HttpGet getRequest = new HttpGet(url);
 
@@ -569,8 +581,10 @@ public class ImageResizeImpl implements ImageResize {
 	@Override
 	public void runResize() {
         List<Integer> levelNine = excelConverter.readFile();
-        //List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(163794);
-        try {
+//      	List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(163794);
+//		List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(416720);
+
+		try {
 			process(levelNine);
 		} catch (IOException e) {
 			log.error("Error in resize processing:",e);
