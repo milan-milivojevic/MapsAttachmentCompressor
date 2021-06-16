@@ -26,7 +26,12 @@ public class AttachmentDTO implements Serializable
     
     @JsonProperty("source")
     private String source;
-    
+
+	@JsonProperty("externalId")
+	private String externalId;
+
+	@JsonProperty("attachmentLink")
+	private String attachmentLink;
     
     public AttachmentDTO()
     {
@@ -88,5 +93,20 @@ public class AttachmentDTO implements Serializable
 	public void setComment(String comment) {
 		this.comment = comment;
 	}
-        
+
+	public String getExternalId() {
+		return externalId;
+	}
+
+	public void setExternalId(String externalId) {
+		this.externalId = externalId;
+	}
+
+	public String getAttachmentLink() {
+		return attachmentLink;
+	}
+
+	public void setAttachmentLink(String attachmentLink) {
+		this.attachmentLink = attachmentLink;
+	}
 }

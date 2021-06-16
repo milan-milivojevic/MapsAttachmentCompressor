@@ -583,7 +583,7 @@ public class ImageResizeImpl implements ImageResize {
         List<Integer> levelNine = excelConverter.readFile();
 //      	List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(163794);
 //		List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(416720);
-
+//		List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(303548);
 		try {
 			process(levelNine);
 		} catch (IOException e) {
