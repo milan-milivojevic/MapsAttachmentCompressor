@@ -55,18 +55,18 @@ import lombok.extern.slf4j.Slf4j;
 @EnableAsync
 @Slf4j
 public class ImageResizeImpl implements ImageResize {
-	
+
 	private static final int HEIGHT=1024;
 
 	@Autowired
 	private Environment env;
-	
+
 	@Autowired
 	AuthorizationService authorizationService;
 
 	@Autowired
 	ExcelConverter excelConverter;
-	
+
 	private ObjectMapper objectMapper = new ObjectMapper();
 	private static final String FILE_PREFIX = "REPORT_REDUCED_";
 	public int totalNodes;
@@ -185,19 +185,27 @@ public class ImageResizeImpl implements ImageResize {
 			int totalElements = 0;
 			int offset = 0;
 			boolean read = false;
+			List <AttachmentDTO> allAttachmentsList = new ArrayList<>();
 			do {
+
 				AttachmentResponseDTO allAttachments = getAttachmentsForNode(n, offset);
 				if (!read) {
 					totalElements = allAttachments.getTotalElements();
 					read = true;
 				}
-				if (allAttachments != null) {
-					log.info("received attachemnts for node id: " + n + " count= " + allAttachments.getTotalElements());
+				allAttachmentsList.addAll(allAttachments.getAttachments());
+				totalElements -= 100;
+				offset += 100;
+			} while (totalElements > 0);
 
-					for (AttachmentDTO attach : allAttachments.getAttachments()) {
+
+				if (allAttachmentsList != null) {
+					log.info("received attachemnts for node id: " + n + " count= " + totalElements);
+
+					for (AttachmentDTO attach : allAttachmentsList) {
 						processedNodes++;
 						if (isFIleExtensionAccepted(attach)
-								&& !isAttachmentProcessed(attach.getAttachmentFileName(), allAttachments)) {
+								&& !isAttachmentListProcessed(attach.getAttachmentFileName(), allAttachmentsList)) {
 							log.info("processing RESIZE for node id: " + n + " for attachment name:"
 									+ attach.getAttachmentFileName());
 							File resized = resizeAttachment(attach, n);
@@ -211,15 +219,13 @@ public class ImageResizeImpl implements ImageResize {
 						}
 					}
 				}
-				totalElements -= 100;
-				offset += 100;
-			} while (totalElements > 0);
+
 
 		}
 		emptyTmpFolder();
 		log.info("Proccess is DONE!!!");
 	}
-	
+
 	private void emptyTmpFolder() {
 		try {
 			File directory = new File(fileTmpPath);
@@ -249,7 +255,20 @@ public class ImageResizeImpl implements ImageResize {
 		}
 		return false;
 	}
-	
+
+	private static boolean isAttachmentListProcessed(String filename, List<AttachmentDTO> allAttachmentsList) {
+
+		for (AttachmentDTO attach : allAttachmentsList) {
+			if(filename.contains(FILE_PREFIX)) {
+				return true;
+			}
+			else if (attach.getAttachmentFileName().equalsIgnoreCase(FILE_PREFIX+filename)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private File resizeAttachment(AttachmentDTO attach, Integer nodeId) throws IOException {
 		File outputfile = downloadAttachment(attach.getAnnexAttachmentId(), nodeId, attach.getAttachmentFileName());
 		try {
@@ -330,7 +349,7 @@ public class ImageResizeImpl implements ImageResize {
 		return null;
 
 	}
-	
+
 	private File downloadAttachment(Integer attachmentId, Integer nodeId, String filename) {
 
 		try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
@@ -581,9 +600,7 @@ public class ImageResizeImpl implements ImageResize {
 	@Override
 	public void runResize() {
         List<Integer> levelNine = excelConverter.readFile();
-//      	List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(163794);
 //		List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(416720);
-//		List<Integer> levelNine = new ArrayList<Integer>(); levelNine.add(303548);
 		try {
 			process(levelNine);
 		} catch (IOException e) {
