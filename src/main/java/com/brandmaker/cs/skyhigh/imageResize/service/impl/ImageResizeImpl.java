@@ -215,7 +215,7 @@ public class ImageResizeImpl implements ImageResize {
                         File resized = resizeAttachment(attach, n);
 
                         if (resized != null) {
-                            uploadAttachment(n, resized, attach.getComment());
+                            uploadAttachment(n, resized, attach.getComment().replace("\r", "\\r").replace("\n","\\n"));
                         } else {
                             log.info("SOMETHING WENT WRONG FOR NODE ID:" + n + " ATTACHMENT ID:"
                                     + attach.getAnnexAttachmentId());
