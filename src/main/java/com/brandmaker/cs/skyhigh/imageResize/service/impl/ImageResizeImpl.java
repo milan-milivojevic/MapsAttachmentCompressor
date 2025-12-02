@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.text.Normalizer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -253,7 +255,7 @@ public class ImageResizeImpl implements ImageResize {
         for (AttachmentDTO attach : allAttachments.getAttachments()) {
             if (filename.contains(FILE_PREFIX)) {
                 return true;
-            } else if (attach.getAttachmentFileName().equalsIgnoreCase(FILE_PREFIX + filename)) {
+            } else if (isSameNormalizedName(filename, attach.getAttachmentFileName())) {
                 return true;
             }
         }
@@ -265,15 +267,45 @@ public class ImageResizeImpl implements ImageResize {
         for (AttachmentDTO attach : allAttachmentsList) {
             if (filename.contains(FILE_PREFIX)) {
                 return true;
-            } else if (attach.getAttachmentFileName().equalsIgnoreCase(FILE_PREFIX + filename)) {
+            } else if (isSameNormalizedName(filename, attach.getAttachmentFileName())) {
                 return true;
             }
         }
         return false;
     }
 
+    private static boolean isSameNormalizedName(String originalFilename, String existingFilename) {
+        String normalizedOriginal = normalizeFilename(originalFilename);
+        String normalizedExisting = normalizeFilename(existingFilename);
+
+        if (normalizedExisting.startsWith(normalizeFilename(FILE_PREFIX))) {
+            normalizedExisting = normalizedExisting.substring(normalizeFilename(FILE_PREFIX).length());
+        }
+
+        return normalizedOriginal.equals(normalizedExisting);
+    }
+
+    private static String normalizeFilename(String filename) {
+        if (filename == null) {
+            return "";
+        }
+
+        String normalized = Normalizer.normalize(filename, Normalizer.Form.NFC);
+        normalized = normalized.toLowerCase();
+        return normalized;
+    }
+
+    private static String sanitizeFilename(String filename) {
+        if (filename == null) {
+            return "";
+        }
+
+        return filename;
+    }
+
     private File resizeAttachment(AttachmentDTO attach, Integer nodeId) throws IOException {
-        File outputfile = downloadAttachment(attach.getAnnexAttachmentId(), nodeId, attach.getAttachmentFileName());
+        String sanitizedFilename = sanitizeFilename(attach.getAttachmentFileName());
+        File outputfile = downloadAttachment(attach.getAnnexAttachmentId(), nodeId, sanitizedFilename);
         try {
             if (outputfile != null) {
                 InputStream targetStream = new FileInputStream(outputfile);
@@ -396,12 +428,15 @@ public class ImageResizeImpl implements ImageResize {
                     .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
             MultipartEntityBuilder entity = MultipartEntityBuilder.create().setMimeSubtype("mixed")
+                    .setCharset(StandardCharsets.UTF_8)
                     .addTextBody("attachment",
                             "{ \"name\": \"" + outputfile.getName() + "\", \"comment\": \"" + comment
                                     + "\", \"link\": \"\", \"newWindow\": false }",
-                            ContentType.APPLICATION_JSON)
+                            ContentType.APPLICATION_JSON.withCharset(StandardCharsets.UTF_8))
                     .addPart(FormBodyPartBuilder.create().setName("file")
-                            .setBody(new ByteArrayBody(Files.readAllBytes(outputfile.toPath()), outputfile.getName()))
+                              .setBody(new ByteArrayBody(Files.readAllBytes(outputfile.toPath()),
+                                    ContentType.APPLICATION_OCTET_STREAM.withCharset(StandardCharsets.UTF_8),
+                                    outputfile.getName()))
                             .build());
 
             postReq.setEntity(entity.build());
