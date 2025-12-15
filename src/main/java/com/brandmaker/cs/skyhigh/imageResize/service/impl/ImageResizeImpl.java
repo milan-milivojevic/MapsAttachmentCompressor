@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.text.Normalizer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -253,9 +252,7 @@ public class ImageResizeImpl implements ImageResize {
     private static boolean isAttachmentProcessed(String filename, AttachmentResponseDTO allAttachments) {
 
         for (AttachmentDTO attach : allAttachments.getAttachments()) {
-            if (filename.contains(FILE_PREFIX)) {
-                return true;
-            } else if (isSameNormalizedName(filename, attach.getAttachmentFileName())) {
+            if (isAlreadyCompressed(filename, attach.getAttachmentFileName())) {
                 return true;
             }
         }
@@ -265,34 +262,24 @@ public class ImageResizeImpl implements ImageResize {
     private static boolean isAttachmentListProcessed(String filename, List<AttachmentDTO> allAttachmentsList) {
 
         for (AttachmentDTO attach : allAttachmentsList) {
-            if (filename.contains(FILE_PREFIX)) {
-                return true;
-            } else if (isSameNormalizedName(filename, attach.getAttachmentFileName())) {
+            if (isAlreadyCompressed(filename, attach.getAttachmentFileName())) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean isSameNormalizedName(String originalFilename, String existingFilename) {
-        String normalizedOriginal = normalizeFilename(originalFilename);
-        String normalizedExisting = normalizeFilename(existingFilename);
-
-        if (normalizedExisting.startsWith(normalizeFilename(FILE_PREFIX))) {
-            normalizedExisting = normalizedExisting.substring(normalizeFilename(FILE_PREFIX).length());
+    private static boolean isAlreadyCompressed(String originalFilename, String existingFilename) {
+        if (originalFilename == null) {
+            return false;
         }
 
-        return normalizedOriginal.equals(normalizedExisting);
-    }
-
-    private static String normalizeFilename(String filename) {
-        if (filename == null) {
-            return "";
+        if (originalFilename.startsWith(FILE_PREFIX)) {
+            return true;
         }
 
-        String normalized = Normalizer.normalize(filename, Normalizer.Form.NFC);
-        normalized = normalized.toLowerCase();
-        return normalized;
+        String expectedCompressedName = FILE_PREFIX + originalFilename;
+        return expectedCompressedName.equals(existingFilename);
     }
 
     private static String sanitizeFilename(String filename) {
