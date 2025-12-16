@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -210,9 +211,9 @@ public class ImageResizeImpl implements ImageResize {
                 for (AttachmentDTO attach : allAttachmentsList) {
                     processedNodes++;
                     if (isFIleExtensionAccepted(attach)
-                            && !isAttachmentListProcessed(attach.getAttachmentFileName(), allAttachmentsList)) {
+                      && !isAttachmentListProcessed(attach.getAttachmentFileName(), allAttachmentsList)) {
                         log.info("processing RESIZE for node id: " + n + " for attachment name:"
-                                + attach.getAttachmentFileName());
+                          + attach.getAttachmentFileName());
                         File resized = resizeAttachment(attach, n);
 
                         if (resized != null) {
@@ -220,7 +221,7 @@ public class ImageResizeImpl implements ImageResize {
                             uploadAttachment(n, resized, comment);
                         } else {
                             log.info("SOMETHING WENT WRONG FOR NODE ID:" + n + " ATTACHMENT ID:"
-                                    + attach.getAnnexAttachmentId());
+                              + attach.getAnnexAttachmentId());
                         }
                     }
                 }
@@ -243,7 +244,7 @@ public class ImageResizeImpl implements ImageResize {
     private boolean isFIleExtensionAccepted(AttachmentDTO attach) {
         String fileExtension = FilenameUtils.getExtension(attach.getAttachmentFileName());
         if (fileExtension.equalsIgnoreCase("jpg") || fileExtension.equalsIgnoreCase("jpeg")
-                || fileExtension.equalsIgnoreCase("png")) {
+          || fileExtension.equalsIgnoreCase("png")) {
             return true;
         }
         return false;
@@ -354,7 +355,7 @@ public class ImageResizeImpl implements ImageResize {
             HttpGet getRequest = new HttpGet(url);
 
             getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-                    .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
             HttpResponse response = httpClient.execute(getRequest);
 
@@ -381,7 +382,7 @@ public class ImageResizeImpl implements ImageResize {
             HttpGet getRequest = new HttpGet(url);
 
             getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-                    .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
             HttpResponse response = httpClient.execute(getRequest);
 
@@ -412,19 +413,23 @@ public class ImageResizeImpl implements ImageResize {
 
             HttpPost postReq = new HttpPost(url);
             postReq.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-                    .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+
+            String fileName = outputfile.getName();
+            String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()).replace("+", "%20");
 
             MultipartEntityBuilder entity = MultipartEntityBuilder.create().setMimeSubtype("mixed")
-                    .setCharset(StandardCharsets.UTF_8)
-                    .addTextBody("attachment",
-                            "{ \"name\": \"" + outputfile.getName() + "\", \"comment\": \"" + comment
-                                    + "\", \"link\": \"\", \"newWindow\": false }",
-                            ContentType.APPLICATION_JSON.withCharset(StandardCharsets.UTF_8))
-                    .addPart(FormBodyPartBuilder.create().setName("file")
-                              .setBody(new ByteArrayBody(Files.readAllBytes(outputfile.toPath()),
-                                    ContentType.APPLICATION_OCTET_STREAM.withCharset(StandardCharsets.UTF_8),
-                                    outputfile.getName()))
-                            .build());
+              .setCharset(StandardCharsets.UTF_8)
+              .addTextBody("attachment",
+                "{ \"name\": \"" + fileName + "\", \"comment\": \"" + comment
+                  + "\", \"link\": \"\", \"newWindow\": false }",
+                ContentType.APPLICATION_JSON.withCharset(StandardCharsets.UTF_8))
+              .addPart(FormBodyPartBuilder.create().setName("file")
+                .addField("Content-Disposition", "form-data; name=\"file\"; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName)
+                .setBody(new ByteArrayBody(Files.readAllBytes(outputfile.toPath()),
+                  ContentType.APPLICATION_OCTET_STREAM,
+                  fileName))
+                .build());
 
             postReq.setEntity(entity.build());
 
@@ -448,7 +453,7 @@ public class ImageResizeImpl implements ImageResize {
             HttpGet getRequest = new HttpGet(url);
 
             getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-                    .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
             HttpResponse response = httpClient.execute(getRequest);
             // verify the valid error code first
@@ -467,7 +472,7 @@ public class ImageResizeImpl implements ImageResize {
                 ObjectMapper objectMapper = new ObjectMapper();
 
                 AttachmentResponseDTO attachmentsResponse = (AttachmentResponseDTO) objectMapper.readValue(apiOutput,
-                        AttachmentResponseDTO.class);
+                  AttachmentResponseDTO.class);
                 return attachmentsResponse;
             }
         } catch (Exception e) {
@@ -480,13 +485,13 @@ public class ImageResizeImpl implements ImageResize {
     private ListOfChildNodes getChildNodes(Integer fromTreeId, Integer toTreeId, Integer rootNodeId) {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             String url = serverMainUrl
-                    + "/node/child/replaceRootNode/from-tree/replaceFromTree/to-tree/replaceToTree?withAdditionalInfo=false";
+              + "/node/child/replaceRootNode/from-tree/replaceFromTree/to-tree/replaceToTree?withAdditionalInfo=false";
 
             HttpGet getRequest = new HttpGet(url.replace("replaceRootNode", "" + rootNodeId)
-                    .replace("replaceFromTree", "" + fromTreeId).replace("replaceToTree", "" + toTreeId));
+              .replace("replaceFromTree", "" + fromTreeId).replace("replaceToTree", "" + toTreeId));
 
             getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-                    .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
             HttpResponse response = httpClient.execute(getRequest);
 
@@ -515,7 +520,7 @@ public class ImageResizeImpl implements ImageResize {
             HttpGet getRequest = new HttpGet(serverMainUrl + "/node/root/24");
 
             getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-                    .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
             HttpResponse response = httpClient.execute(getRequest);
 
@@ -545,7 +550,7 @@ public class ImageResizeImpl implements ImageResize {
             HttpGet getRequest = new HttpGet(serverMainUrl + "/tree");
 
             getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-                    .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
 
             HttpResponse response = httpClient.execute(getRequest);
 
