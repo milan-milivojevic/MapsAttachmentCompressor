@@ -399,7 +399,7 @@ public class ImageResizeImpl implements ImageResize {
 
             MultipartEntityBuilder entity = MultipartEntityBuilder.create()
               .setMimeSubtype("mixed")
-              .setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
+              .setMode(HttpMultipartMode.RFC6532)
               .setCharset(StandardCharsets.UTF_8)
               .addTextBody("attachment",
                 "{ \"name\": \"" + outputfile.getName() + "\", \"comment\": \"" + comment
