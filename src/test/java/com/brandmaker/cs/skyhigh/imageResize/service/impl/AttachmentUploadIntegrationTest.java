@@ -27,10 +27,10 @@ import com.brandmaker.cs.skyhigh.imageResize.service.AuthorizationService;
 @SpringBootTest
 class AttachmentUploadIntegrationTest {
 
-	private static final int DEFAULT_NODE_ID = 898692;
+	private static final int DEFAULT_NODE_ID = 743563;
 	private static final String DEFAULT_COMMENT = "Compressed upload";
-	private static final String DEFAULT_ATTACHMENT_NAME = "REPORT_REDUCED_Screenshot 2025-02-07 at 12.57.20 PM.png";
-	private static final String DEFAULT_RESOURCE_NAME = "REPORT_REDUCED_Screenshot 2025-02-07 at 12.57.20 PM.png";
+	private static final String DEFAULT_ATTACHMENT_NAME = "REPORT_REDUCED_Test_Compression_Tool_&#+-()%_äöüß_язык_合気道.png";
+	private static final String DEFAULT_RESOURCE_NAME = "REPORT_REDUCED_Test_Compression_Tool_&#+-()%_äöüß_язык_合気道.png";
 
 	@Autowired
 	private Environment env;
