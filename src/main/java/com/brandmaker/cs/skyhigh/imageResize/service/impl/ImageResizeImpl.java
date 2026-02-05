@@ -336,8 +336,7 @@ public class ImageResizeImpl implements ImageResize {
 
             HttpGet getRequest = new HttpGet(url);
 
-            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken());
 
             HttpResponse response = httpClient.execute(getRequest);
 
@@ -363,8 +362,7 @@ public class ImageResizeImpl implements ImageResize {
 
             HttpGet getRequest = new HttpGet(url);
 
-            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken());
 
             HttpResponse response = httpClient.execute(getRequest);
 
@@ -394,8 +392,7 @@ public class ImageResizeImpl implements ImageResize {
             String url = serverMainUrl + "/attachment/node/" + nodeId + "/";
 
             HttpPost postReq = new HttpPost(url);
-            postReq.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+            postReq.addHeader("Authorization", "Bearer " + authorizationService.getToken());
 
             MultipartEntityBuilder entity = MultipartEntityBuilder.create()
               .setMimeSubtype("mixed")
@@ -431,8 +428,7 @@ public class ImageResizeImpl implements ImageResize {
             String url = serverMainUrl + "/attachment/node/" + nodeId + "?offset=" + offset;
             HttpGet getRequest = new HttpGet(url);
 
-            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken());
 
             HttpResponse response = httpClient.execute(getRequest);
             // verify the valid error code first
@@ -469,8 +465,7 @@ public class ImageResizeImpl implements ImageResize {
             HttpGet getRequest = new HttpGet(url.replace("replaceRootNode", "" + rootNodeId)
               .replace("replaceFromTree", "" + fromTreeId).replace("replaceToTree", "" + toTreeId));
 
-            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken());
 
             HttpResponse response = httpClient.execute(getRequest);
 
@@ -498,8 +493,7 @@ public class ImageResizeImpl implements ImageResize {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpGet getRequest = new HttpGet(serverMainUrl + "/node/root/24");
 
-            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken());
 
             HttpResponse response = httpClient.execute(getRequest);
 
@@ -528,8 +522,7 @@ public class ImageResizeImpl implements ImageResize {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpGet getRequest = new HttpGet(serverMainUrl + "/tree");
 
-            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken()
-              .replace("{\"access_token\":", "").replace("}", "").replace("\"", ""));
+            getRequest.addHeader("Authorization", "Bearer " + authorizationService.getToken());
 
             HttpResponse response = httpClient.execute(getRequest);
 
