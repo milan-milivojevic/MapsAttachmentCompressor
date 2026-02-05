@@ -9,19 +9,27 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 
 import javax.imageio.ImageIO;
+import javax.net.ssl.SSLContext;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -58,7 +66,7 @@ class AttachmentCompressionUploadIntegrationTest {
 			writeCompressedResource(compressedFile);
 
 			String url = serverMainUrl + "/attachment/node/" + DEFAULT_NODE_ID + "/";
-			try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+			try (CloseableHttpClient httpClient = createHttpClientForIntegrationSsl()) {
 				HttpPost postReq = new HttpPost(url);
 				postReq.addHeader("Authorization", "Bearer " + token);
 
@@ -89,6 +97,28 @@ class AttachmentCompressionUploadIntegrationTest {
 			Files.deleteIfExists(compressedFile);
 			Files.deleteIfExists(tempDir);
 		}
+	}
+
+	private CloseableHttpClient createHttpClientForIntegrationSsl()
+		throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+
+		boolean allowInsecureSsl = Boolean.parseBoolean(
+			env.getProperty("application.integration.allowInsecureSsl", "true"));
+
+		if (!allowInsecureSsl) {
+			return HttpClientBuilder.create().build();
+		}
+
+		SSLContext sslContext = SSLContextBuilder.create()
+			.loadTrustMaterial((TrustStrategy) (certificateChain, authType) -> true)
+			.build();
+
+		SSLConnectionSocketFactory sslSocketFactory =
+			new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+
+		return HttpClientBuilder.create()
+			.setSSLSocketFactory(sslSocketFactory)
+			.build();
 	}
 
 	private void writeCompressedResource(Path outputPath) throws IOException {
